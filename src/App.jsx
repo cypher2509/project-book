@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Book } from './components/Book'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { Environment, OrbitControls } from '@react-three/drei'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -11,9 +11,11 @@ function App() {
 
   return (
     <div style={{ width: '800px', height: '600px' }}>
-      <Canvas shadows camera={{ position:  [-0.5, 1, 4], fov: 10 }}>
+      <Canvas shadows camera={{ position:  [-0.5, 1, 4], fov: 45 }}>
         <OrbitControls />
-        <ambientLight intensity={0.5} />
+        <Environment preset="studio"></Environment>
+
+        <ambientLight intensity={1} />
         <Book/>
       </Canvas>
       <p className="read-the-docs">
