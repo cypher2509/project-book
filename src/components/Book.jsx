@@ -3,10 +3,12 @@ import { useMemo, useEffect, useState, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { degToRad } from "three/src/math/MathUtils.js";
 import { useTexture } from "@react-three/drei";
-import { pages } from "./pages.jsx";
-import { pageAtom } from "../App.jsx";
 import { useAtom } from "jotai";
 import { MathUtils } from "three/src/math/MathUtils.js";
+
+import { pages } from "./pages.jsx";
+import { pageAtom } from "../App.jsx";
+import { createNotebookTexture } from "./Notebook.jsx";
 
 const PAGE_WIDTH = 1.28;
 const PAGE_HEIGHT = 1.71;
@@ -66,7 +68,7 @@ const pageMaterials = [
     }),
   ];
 
-const Page = ({index, front, imageData, opened, bookClosed, page, ...props}) => {
+const Page = ({index, front, imageData, opened, bookClosed, description, page, ...props}) => {
   const [picture, picture2, pictureRoughness, ...photoTextures] = useTexture([
     `textures/${front}`,
     '/textures/book-cover-roughness.jpg',
@@ -112,18 +114,20 @@ const Page = ({index, front, imageData, opened, bookClosed, page, ...props}) => 
     return mesh;
   }, []);
 
+  const notebookTexture = useMemo(() => createNotebookTexture(description), []);
+    
+
   useFrame((_, delta) => {
     if (!skinnedMeshRef.current || !group.current) {
       return;
     }
-  
     const bones = skinnedMeshRef.current.skeleton.bones;
-  
-    let targetRotation = opened ? -Math.PI / 2 : Math.PI / 2;
-    if (!bookClosed) {
-      targetRotation += degToRad(index * 0.8);
-    }
 
+    let targetRotation = opened ? Math.PI / 2 : -Math.PI / 1.5;
+    if (!bookClosed) {
+      targetRotation += degToRad(index * 2);
+    }
+    console.log(targetRotation);
     group.current.rotation.y = targetRotation;
     group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.2);
   
@@ -139,7 +143,7 @@ const Page = ({index, front, imageData, opened, bookClosed, page, ...props}) => 
         ref={(instance) => {
           skinnedMeshRef.current = instance;
         }}
-        position-z={ index * PAGE_DEPTH}
+        position-z={ -index * PAGE_DEPTH}
 
       />
       {imageData.map((data, i) => (
@@ -156,6 +160,13 @@ const Page = ({index, front, imageData, opened, bookClosed, page, ...props}) => 
           />
         </mesh>
       ))}
+      <mesh
+        position={[PAGE_WIDTH / 2, 0, 0]} // slight offset behind
+        rotation={[0, 0, 0]} // flip to face backward
+      >
+        <planeGeometry args={[PAGE_WIDTH, PAGE_HEIGHT]} />
+        <meshStandardMaterial map={notebookTexture} roughness={0.8} metalness={0.01} />
+      </mesh>
     </group>
   );
 };
@@ -199,11 +210,12 @@ export const Book = () => {
           <Page 
             key={i}
             index = {i} 
-            page = {page} 
+            page = {delayedPage} 
             setPage={setPage}
             front={pageData.front}
             imageData={pageData.imageData}  
             opened={delayedPage > i}
+            description={pageData.description}
             bookClosed={delayedPage === 0 || delayedPage === pages.length}
           />
         ))
