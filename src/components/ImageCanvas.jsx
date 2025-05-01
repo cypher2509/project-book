@@ -1,22 +1,23 @@
-import { CanvasTexture } from "three";
+import { CanvasTexture , SRGBColorSpace} from "three";
 
-export function createImageDataTexture(imageData = []) {
+export function createImageDataTexture(imageData = [],fillColor ="#2e2e2e") 
+{
   const size = 1024;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#fff";
+  ctx.fillStyle = fillColor;
   ctx.fillRect(0, 0, size, size);
 
   // Map imageData into full drawing info
   const images = imageData.map((img, i) => ({
     src: img.src,
-    x: img.canvasX ?? 100,
-    y: img.canvasY ?? 100 + i * 220,
-    width: img.canvasWidth ?? 300,
-    height: img.canvasHeight ?? 200,
+    x: img.position[0] ?? 100,
+    y: img.position[1] ?? 100 + i * 220,
+    width: img.size[0] ?? 300,
+    height: img.size[1] ?? 200,
   }));
 
   // Load and draw
@@ -30,6 +31,7 @@ export function createImageDataTexture(imageData = []) {
   });
 
   const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
   texture.needsUpdate = true;
   return texture;
 }

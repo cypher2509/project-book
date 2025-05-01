@@ -23,10 +23,10 @@ export function createImageTextureWithRoughness(imageData = []) {
   
     const images = imageData.map((img, i) => ({
       src: img.src,
-      x: img.canvasX ?? 100,
-      y: img.canvasY ?? 100 + i * 220,
-      width: img.canvasWidth ?? 300,
-      height: img.canvasHeight ?? 200,
+      x: img.position[0] ?? 100,
+      y: img.position[1] ?? 100 + i * 220,
+      width: img.size[0] ?? 300,
+      height: img.size[1] ?? 200,
     }));
   
     const texture = new CanvasTexture(canvas);

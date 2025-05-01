@@ -73,19 +73,17 @@ const pageMaterials = [
     }),
   ];
 
-const Page = ({index, front, imageData, opened, bookClosed, description, page, ...props}) => {
-  const [picture, picture2, pictureRoughness, ...photoTextures] = useTexture([
-    `textures/${front}`,
-    '/textures/book-cover-roughness.jpg',
-    ...imageData.map((d) => d.src),
+const Page = ({index, front, imageData, fillColor, opened, bookClosed,title, description,tech, page, ...props}) => {
 
-  ])
+  const safeFront = front ?? 'book-cover.jpg'; // fallback texture
+  const [picture] = useTexture([`textures/${safeFront}`]);
+  picture.colorSpace = SRGBColorSpace;
+
   const group = useRef();
   const skinnedMeshRef = useRef();
-  picture.colorSpace =picture2.colorSpace = SRGBColorSpace;
 
-  const notebookTexture = useMemo(() => createNotebookTexture(description), []);
-  const ImageTexture = useMemo(() => createImageDataTexture(imageData), [imageData]);
+  const notebookTexture = useMemo(() => createNotebookTexture(title, description,tech), []);
+  const ImageTexture = useMemo(() => createImageDataTexture(imageData, fillColor), [imageData,fillColor]);
 
   const { texture: ImageTextureRoughness, roughnessMap } = useMemo(
     () => createImageTextureWithRoughness(imageData),
@@ -111,10 +109,9 @@ const Page = ({index, front, imageData, opened, bookClosed, description, page, .
     const materials = [...pageMaterials,
       new MeshStandardMaterial({
         map: index === 0 ? picture : 
-        notebookTexture, // ← use this instead of picture2
+        notebookTexture, 
         roughness: 0.8,
         metalness: 0.01,
-      
       }),
       new MeshStandardMaterial({
         map: ImageTexture,
@@ -233,9 +230,12 @@ export const Book = () => {
             page = {delayedPage} 
             setPage={setPage}
             front={pageData.front}
-            imageData={pageData.imageData}  
+            imageData={pageData.imageData} 
+            fillColor= {pageData.fillColor} 
             opened={delayedPage > i && delayedPage !== pages.length}
-            description={pageData.description}
+            title={pages[i - 1]?.title ?? ''}
+            description={pages[i - 1]?.description ?? ''}
+            tech = {pages[i - 1]?.tech ?? ''}
             bookClosed={delayedPage === 0 || delayedPage === pages.length}
           />
         ))

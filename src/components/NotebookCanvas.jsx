@@ -1,9 +1,6 @@
 import { CanvasTexture } from 'three';
 
-export function createNotebookTexture({
-  header = 'My Notebook Title',
-  text = 'This is a very long line that should wrap nicely to the next line and stay inside the ruled lines below.'
-} = {}) {
+export function createNotebookTexture(header, description,tech) {
   const size = 1024;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -59,7 +56,7 @@ export function createNotebookTexture({
 
   const marginLeft = leftMarginX + 20;
   const maxWidth = size - marginLeft - 40;
-  const words = text.split(/\s+/);
+  const words = description.split(/\s+/);
 
   let x = marginLeft;
   let y = textStartY + 60;
@@ -82,7 +79,10 @@ export function createNotebookTexture({
   if (y + lineHeight <= size && line.trim() !== '') {
     ctx.fillText(line.trim(), x, y);
   }
-
+  ctx.fillStyle = '#c62828'; // Red pen color
+  ctx.font = "italic 44px 'Patrick Hand', cursive"; // Red pen font style
+  ctx.textBaseline = 'top';
+  ctx.fillText(tech, marginLeft, y + 20);
   const texture = new CanvasTexture(canvas);
   texture.needsUpdate = true;
   return texture;
