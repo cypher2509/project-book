@@ -1,4 +1,4 @@
-import { BoxGeometry, SkinnedMesh , Skeleton, Uint16BufferAttribute, Float32BufferAttribute, Vector3, MeshStandardMaterial, Bone, SkeletonHelper, Color, SRGBColorSpace } from "three";
+import { BoxGeometry, SkinnedMesh , Skeleton, Uint16BufferAttribute, Float32BufferAttribute, Vector3, MeshStandardMaterial, Bone, Color, SRGBColorSpace } from "three";
 import { useMemo, useEffect, useState, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { degToRad } from "three/src/math/MathUtils.js";
