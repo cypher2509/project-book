@@ -8,11 +8,14 @@ import { MathUtils } from "three/src/math/MathUtils.js";
 
 import { pages } from "./pages.jsx";
 import { pageAtom } from "../App.jsx";
-import { createNotebookTexture } from "./Notebook.jsx";
+import { createImageDataTexture } from "./ImageCanvas.jsx";
+import { createNotebookTexture } from "./NotebookCanvas.jsx";
+import { createImageTextureWithRoughness } from "./ImageCanvasRoughness.jsx";
 
+//page dimensions
 const PAGE_WIDTH = 1.28;
 const PAGE_HEIGHT = 1.71;
-const PAGE_DEPTH = 0.01;
+const PAGE_DEPTH = 0.006;
 const PAGE_SEGMENTS = 30;
 const SEGMENT_WIDTH = PAGE_WIDTH / PAGE_SEGMENTS;
 
@@ -52,6 +55,8 @@ pageGeometry.setAttribute(
   new Float32BufferAttribute(skinWeights, 4)
 );
 
+
+// page edge materials
 const whiteColor = new Color("white");
 const pageMaterials = [
     new MeshStandardMaterial({
@@ -78,6 +83,16 @@ const Page = ({index, front, imageData, opened, bookClosed, description, page, .
   const group = useRef();
   const skinnedMeshRef = useRef();
   picture.colorSpace =picture2.colorSpace = SRGBColorSpace;
+
+  const notebookTexture = useMemo(() => createNotebookTexture(description), []);
+  const ImageTexture = useMemo(() => createImageDataTexture(imageData), [imageData]);
+
+  const { texture: ImageTextureRoughness, roughnessMap } = useMemo(
+    () => createImageTextureWithRoughness(imageData),
+    [imageData]
+  );
+  
+
   const manualSkinnedMesh = useMemo(() => {
     const bones = [];
     for (let i = 0; i <= PAGE_SEGMENTS; i++) {
@@ -92,14 +107,20 @@ const Page = ({index, front, imageData, opened, bookClosed, description, page, .
         bones[i - 1].add(bone);
       }
     }
-
+  
     const materials = [...pageMaterials,
       new MeshStandardMaterial({
-        map: picture,
+        map: index === 0 ? picture : 
+        notebookTexture, // ← use this instead of picture2
+        roughness: 0.8,
+        metalness: 0.01,
       
       }),
       new MeshStandardMaterial({
-        map: picture2,
+        map: ImageTexture,
+        roughnessMap,
+        metalness: 0.3,           // required for highlights
+        roughness: 1.0, 
         
       }),
     ]
@@ -114,8 +135,8 @@ const Page = ({index, front, imageData, opened, bookClosed, description, page, .
     return mesh;
   }, []);
 
-  const notebookTexture = useMemo(() => createNotebookTexture(description), []);
-    
+  //creating the notebook page with project description
+
 
   useFrame((_, delta) => {
     if (!skinnedMeshRef.current || !group.current) {
@@ -123,21 +144,41 @@ const Page = ({index, front, imageData, opened, bookClosed, description, page, .
     }
     const bones = skinnedMeshRef.current.skeleton.bones;
 
-    let targetRotation = opened ? Math.PI / 2 : -Math.PI / 1.5;
+    let targetRotation = opened ? -Math.PI : -Math.PI / 2;
     if (!bookClosed) {
-      targetRotation += degToRad(index * 2);
+      targetRotation += degToRad(index * 0.5);
     }
-    console.log(targetRotation);
-    group.current.rotation.y = targetRotation;
-    group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.2);
-  
     for (let i = 0; i < bones.length; i++) {
       bones[i].rotation.set(0, 0, 0);
     }
+    group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.01);
+
+    if(!opened && !bookClosed) {
+      const amplitude = Math.PI / 50; // ~5 degrees
+      const frequency = 0.08;
+  
+      for (let i = 3; i < bones.length; i++) {
+        const bend = Math.cos(frequency * i) * amplitude;
+        bones[i].rotation.y = bend;
+      }
+    }
+
+    if (opened ) {
+      const amplitude = Math.PI / 10 ; // ~5 degrees
+      const frequency =  0.005  ;
+  
+      for (let i = 0; i < bones.length; i++) {
+        const bend = Math.sin(-i * frequency) * amplitude;
+        bones[bones.length-1 - i].rotation.y = bend;
+      }
+    }
+  
   });
 
   return (
     <group {...props} ref={group}>
+
+      {/* page mesh */}
       <primitive
         object={manualSkinnedMesh}
         ref={(instance) => {
@@ -146,27 +187,6 @@ const Page = ({index, front, imageData, opened, bookClosed, description, page, .
         position-z={ -index * PAGE_DEPTH}
 
       />
-      {imageData.map((data, i) => (
-        <mesh
-          key={i}
-          position={data.position}
-          rotation={data.rotation}
-        >
-          <planeGeometry args={data.size} />
-          <meshStandardMaterial
-            map={photoTextures[i]}
-            roughness={0.05}
-            metalness={0.2}
-          />
-        </mesh>
-      ))}
-      <mesh
-        position={[PAGE_WIDTH / 2, 0, 0]} // slight offset behind
-        rotation={[0, 0, 0]} // flip to face backward
-      >
-        <planeGeometry args={[PAGE_WIDTH, PAGE_HEIGHT]} />
-        <meshStandardMaterial map={notebookTexture} roughness={0.8} metalness={0.01} />
-      </mesh>
     </group>
   );
 };
@@ -214,7 +234,7 @@ export const Book = () => {
             setPage={setPage}
             front={pageData.front}
             imageData={pageData.imageData}  
-            opened={delayedPage > i}
+            opened={delayedPage > i && delayedPage !== pages.length}
             description={pageData.description}
             bookClosed={delayedPage === 0 || delayedPage === pages.length}
           />
