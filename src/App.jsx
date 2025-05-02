@@ -5,7 +5,6 @@ import { Environment, OrbitControls } from '@react-three/drei'
 import { atom, useAtom } from "jotai";
 import { pages } from './components/pages.jsx'
 
-import viteLogo from '/vite.svg'
 import './App.css'
 export const pageAtom = atom(0);
 
@@ -17,7 +16,7 @@ function App() {
     <div style={{ width: '90vw', height: '90vh' }}>
       <Canvas shadows camera={{ position:  [-0.5, 1, 4], fov: 45 }}>
         <OrbitControls />
-        <Environment preset="studio"></Environment>
+        <Environment preset="apartment"></Environment>
 
         <ambientLight intensity={0.5} />
         <Book/>

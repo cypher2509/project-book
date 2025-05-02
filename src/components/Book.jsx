@@ -2,7 +2,7 @@ import { BoxGeometry, SkinnedMesh , Skeleton, Uint16BufferAttribute, Float32Buff
 import { useMemo, useEffect, useState, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { degToRad } from "three/src/math/MathUtils.js";
-import { useTexture } from "@react-three/drei";
+import { useCursor, useTexture } from "@react-three/drei";
 import { useAtom } from "jotai";
 import { MathUtils } from "three/src/math/MathUtils.js";
 
@@ -27,7 +27,7 @@ const pageGeometry = new BoxGeometry(
   2
 );
 
-pageGeometry.translate(PAGE_WIDTH / 2, 0, 0);
+pageGeometry.translate(PAGE_WIDTH/2 , 0, 0);
 
 const position = pageGeometry.attributes.position;
 const vertex = new Vector3();
@@ -58,6 +58,8 @@ pageGeometry.setAttribute(
 
 // page edge materials
 const whiteColor = new Color("white");
+const emissiveColor = new Color("white");
+
 const pageMaterials = [
     new MeshStandardMaterial({
       color: whiteColor,
@@ -73,17 +75,24 @@ const pageMaterials = [
     }),
   ];
 
-const Page = ({index, front, imageData, fillColor, opened, bookClosed,title, description,tech, page, ...props}) => {
+const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClosed,title, description,tech, page, ...props}) => {
+
+  const [highlighted, setHighlighted] = useState(false);
+  useCursor(highlighted);
 
   const safeFront = front ?? 'book-cover.jpg'; // fallback texture
-  const [picture] = useTexture([`textures/${safeFront}`]);
+  const safeBack = back ?? 'book-back.jpg'
+  const [picture, backCover] = useTexture([`textures/${safeFront}`, `textures/${safeBack}`]);
+
   picture.colorSpace = SRGBColorSpace;
 
   const group = useRef();
   const skinnedMeshRef = useRef();
 
+
   const notebookTexture = useMemo(() => createNotebookTexture(title, description,tech), []);
   const ImageTexture = useMemo(() => createImageDataTexture(imageData, fillColor), [imageData,fillColor]);
+  const backCoverRoughness = useTexture('/textures/book-cover-roughness.jpg');
 
   const { texture: ImageTextureRoughness, roughnessMap } = useMemo(
     () => createImageTextureWithRoughness(imageData),
@@ -112,14 +121,30 @@ const Page = ({index, front, imageData, fillColor, opened, bookClosed,title, des
         notebookTexture, 
         roughness: 0.8,
         metalness: 0.01,
+        emissive: emissiveColor,
+        emissiveIntensity: 0,
+
       }),
-      new MeshStandardMaterial({
-        map: ImageTexture,
-        roughnessMap,
-        metalness: 0.3,           // required for highlights
-        roughness: 1.0, 
-        
-      }),
+      new MeshStandardMaterial(
+        index === pages.length - 1
+          ? {
+              map: backCover,
+              roughnessMap: backCoverRoughness,
+              metalness: 0.7,
+              roughness: 1.0,
+              emissive: emissiveColor,
+              emissiveIntensity: 0,
+      
+            }
+          : {
+              map: ImageTexture,
+              roughnessMap,
+              metalness: 0.3,
+              roughness: 1.0,
+              emissive: emissiveColor,
+              emissiveIntensity: 0,      
+            }
+      )
     ]
     const skeleton = new Skeleton(bones);
     const mesh = new SkinnedMesh(pageGeometry, materials);
@@ -148,7 +173,7 @@ const Page = ({index, front, imageData, fillColor, opened, bookClosed,title, des
     for (let i = 0; i < bones.length; i++) {
       bones[i].rotation.set(0, 0, 0);
     }
-    group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.01);
+    group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.03);
 
     if(!opened && !bookClosed) {
       const amplitude = Math.PI / 50; // ~5 degrees
@@ -169,6 +194,14 @@ const Page = ({index, front, imageData, fillColor, opened, bookClosed,title, des
         bones[bones.length-1 - i].rotation.y = bend;
       }
     }
+
+    const emissiveIntensity = highlighted ? 0.22 : 0;
+    skinnedMeshRef.current.material[4].emissiveIntensity =
+      skinnedMeshRef.current.material[5].emissiveIntensity = MathUtils.lerp(
+        skinnedMeshRef.current.material[4].emissiveIntensity,
+        emissiveIntensity,
+        0.1
+      );
   
   });
 
@@ -182,6 +215,19 @@ const Page = ({index, front, imageData, fillColor, opened, bookClosed,title, des
           skinnedMeshRef.current = instance;
         }}
         position-z={ -index * PAGE_DEPTH}
+        onClick={(e) => {
+          e.stopPropagation();
+          opened? setPage(index): setPage(index+1);
+          setHighlighted(false);
+        }}
+        onPointerEnter={(e) => {
+          e.stopPropagation();
+          setHighlighted(true);
+        }}
+        onPointerLeave={(e) => {
+          e.stopPropagation();
+          setHighlighted(false);
+        }}
 
       />
     </group>
