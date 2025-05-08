@@ -93,7 +93,7 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
   const notebookTexture = useMemo(() => createNotebookTexture(title, description,tech), []);
   const ImageTexture = useMemo(() => createImageDataTexture(imageData, fillColor), [imageData,fillColor]);
   const backCoverRoughness = useTexture('/textures/book-cover-roughness.jpg');
-
+  const frontCoverRoughness = useTexture('/textures/front-cover-roughness.jpg')
   const { texture: ImageTextureRoughness, roughnessMap } = useMemo(
     () => createImageTextureWithRoughness(imageData),
     [imageData]
@@ -120,6 +120,7 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
         map: index === 0 ? picture : 
         notebookTexture, 
         roughness: 0.8,
+        roughnessMap: index === 0 ? frontCoverRoughness: null,
         metalness: 0.01,
         emissive: emissiveColor,
         emissiveIntensity: 0,
