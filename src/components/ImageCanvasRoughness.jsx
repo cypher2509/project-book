@@ -1,4 +1,4 @@
-import { CanvasTexture } from "three";
+import { CanvasTexture, SRGBColorSpace } from "three";
 
 export function createImageTextureWithRoughness(imageData = []) {
     const size = 1024;
@@ -28,13 +28,15 @@ export function createImageTextureWithRoughness(imageData = []) {
       width: img.size[0] ?? 300,
       height: img.size[1] ?? 200,
     }));
-  
+    
+    
     const texture = new CanvasTexture(canvas);
     const roughnessMap = new CanvasTexture(roughCanvas);
   
     images.forEach((data) => {
       const img = new Image();
       img.src = data.src;
+      img.colorSpace = SRGBColorSpace;
       img.onload = () => {
         // Draw image
         ctx.drawImage(img, data.x, data.y, data.width, data.height);

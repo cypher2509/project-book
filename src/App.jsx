@@ -16,9 +16,18 @@ function App() {
     <div style={{ width: '90vw', height: '90vh' }}>
       <Canvas shadows camera={{ position:  [-0.5, 1, 4], fov: 45 }}>
         <OrbitControls />
-        <Environment preset="apartment"></Environment>
+        <Environment preset="lobby"></Environment>
 
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={0.9} />
+        <directionalLight
+          position={[0, 4, 1]}
+          intensity={1.2}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-bias={-0.001}
+          shadow-normalBias={0.02}
+        />
         <Book/>
       </Canvas>
       <div className="overflow-auto flex items-center gap-4 max-w-full p-10">
@@ -36,9 +45,6 @@ function App() {
               </button>
             ))}
           </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </div>
   )
 }

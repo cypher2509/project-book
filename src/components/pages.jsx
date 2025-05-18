@@ -1,3 +1,5 @@
+//gets the 4 images from the project folder and sets position and rotation */}
+
 function getImageData(projectName){
     return Array(
       {src: `/textures/${projectName}/1.png`,
@@ -17,7 +19,7 @@ function getImageData(projectName){
 
 export const pages = [
   {
-    front: 'Adventure.png',
+    front: 'cover-page.png',
     imageData: getImageData('rma'),
     title: 'Restaurant Management app',
     description: 'A full-stack web application designed to streamline restaurant operations, including reservations, menu management, table availability, and inventory tracking. It features real-time table availability, dynamic menu updates, and efficient backend integration with stored procedures and triggers for optimized performance. This project showcases my skills in full-stack development and database management.',

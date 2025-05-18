@@ -80,20 +80,20 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
   const [highlighted, setHighlighted] = useState(false);
   useCursor(highlighted);
 
-  const safeFront = front ?? 'book-cover.jpg'; // fallback texture
-  const safeBack = back ?? 'book-back.jpg'
+  const safeFront = front ?? 'cover-page.png'; // fallback texture
+  const safeBack = back ?? 'book-back.png'; 
   const [picture, backCover] = useTexture([`textures/${safeFront}`, `textures/${safeBack}`]);
 
   picture.colorSpace = SRGBColorSpace;
-
+  backCover.colorSpace = SRGBColorSpace;
   const group = useRef();
   const skinnedMeshRef = useRef();
 
 
   const notebookTexture = useMemo(() => createNotebookTexture(title, description,tech), []);
   const ImageTexture = useMemo(() => createImageDataTexture(imageData, fillColor), [imageData,fillColor]);
-  const backCoverRoughness = useTexture('/textures/book-cover-roughness.jpg');
-  const frontCoverRoughness = useTexture('/textures/front-cover-roughness.jpg')
+  const backCoverRoughness = useTexture('/textures/book-back-roughness.png');
+  const frontCoverRoughness = useTexture('/textures/cover-texture.png')
   const { texture: ImageTextureRoughness, roughnessMap } = useMemo(
     () => createImageTextureWithRoughness(imageData),
     [imageData]
@@ -121,7 +121,7 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
         notebookTexture, 
         roughness: 0.8,
         roughnessMap: index === 0 ? frontCoverRoughness: null,
-        metalness: 0.01,
+        metalness: 0.3,
         emissive: emissiveColor,
         emissiveIntensity: 0,
 
@@ -130,9 +130,9 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
         index === pages.length - 1
           ? {
               map: backCover,
+              metalness: 0.3,
+              roughness: 0.8,
               roughnessMap: backCoverRoughness,
-              metalness: 0.7,
-              roughness: 1.0,
               emissive: emissiveColor,
               emissiveIntensity: 0,
       
@@ -161,7 +161,14 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
   //creating the notebook page with project description
 
 
-  useFrame((_, delta) => {
+  useFrame(({ clock },_, delta) => {
+    const t = clock.getElapsedTime();
+      group.current.position.y = Math.sin(t * 2) * 0.05; // float
+
+    if(bookClosed) {
+      group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, 0.9 , 0.01);
+    }
+
     if (!skinnedMeshRef.current || !group.current) {
       return;
     }
@@ -169,12 +176,14 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
 
     let targetRotation = opened ? -Math.PI : -Math.PI / 2;
     if (!bookClosed) {
-      targetRotation += degToRad(index * 0.5);
+      targetRotation += degToRad(index * 0.25);
     }
     for (let i = 0; i < bones.length; i++) {
       bones[i].rotation.set(0, 0, 0);
     }
-    group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.03);
+
+    //page turning animation speed
+    group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.02);
 
     if(!opened && !bookClosed) {
       const amplitude = Math.PI / 50; // ~5 degrees
