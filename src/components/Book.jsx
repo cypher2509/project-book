@@ -26,7 +26,7 @@ const pageGeometry = new BoxGeometry(
   PAGE_SEGMENTS,
   2
 );
-
+// intial page position
 pageGeometry.translate(PAGE_WIDTH/2 , 0, 0);
 
 const position = pageGeometry.attributes.position;
@@ -56,7 +56,7 @@ pageGeometry.setAttribute(
 );
 
 
-// page edge materials
+// page material color
 const whiteColor = new Color("white");
 const emissiveColor = new Color("white");
 
@@ -89,17 +89,22 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
   const group = useRef();
   const skinnedMeshRef = useRef();
 
-
+  //page textures
   const notebookTexture = useMemo(() => createNotebookTexture(title, description,tech), []);
   const ImageTexture = useMemo(() => createImageDataTexture(imageData, fillColor), [imageData,fillColor]);
+
+  //front page and cover page roughness
   const backCoverRoughness = useTexture('/textures/book-back-roughness.png');
   const frontCoverRoughness = useTexture('/textures/cover-texture.png')
+
+  //image roughness
   const { texture: ImageTextureRoughness, roughnessMap } = useMemo(
     () => createImageTextureWithRoughness(imageData),
     [imageData]
   );
   
 
+  //page mesh
   const manualSkinnedMesh = useMemo(() => {
     const bones = [];
     for (let i = 0; i <= PAGE_SEGMENTS; i++) {
@@ -158,13 +163,13 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
     return mesh;
   }, []);
 
-  //creating the notebook page with project description
 
-
+  
   useFrame(({ clock },_, delta) => {
     const t = clock.getElapsedTime();
-      group.current.position.y = Math.sin(t * 2) * 0.05; // float
+      group.current.position.y = Math.sin(t * 2) * 0.05; //floating animation
 
+    //getting back to place when book closed
     if(bookClosed) {
       group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, 0.9 , 0.01);
     }
@@ -174,19 +179,25 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
     }
     const bones = skinnedMeshRef.current.skeleton.bones;
 
+    //setting the target rotation
     let targetRotation = opened ? -Math.PI : -Math.PI / 2;
+
+    //adding space between the pages when book is open
     if (!bookClosed) {
       targetRotation += degToRad(index * 0.25);
     }
+
+    //all bones set to  initial position
     for (let i = 0; i < bones.length; i++) {
       bones[i].rotation.set(0, 0, 0);
     }
 
-    //page turning animation speed
+    //page turning animation
     group.current.rotation.y = MathUtils.lerp(group.current.rotation.y, targetRotation, 0.02);
 
+    //bending the pages on the right side using cosin function
     if(!opened && !bookClosed) {
-      const amplitude = Math.PI / 50; // ~5 degrees
+      const amplitude = Math.PI / 50; 
       const frequency = 0.08;
   
       for (let i = 3; i < bones.length; i++) {
@@ -194,9 +205,9 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
         bones[i].rotation.y = bend;
       }
     }
-
+    //bending the pages on the left side using sine function
     if (opened ) {
-      const amplitude = Math.PI / 10 ; // ~5 degrees
+      const amplitude = Math.PI / 10 ; 
       const frequency =  0.005  ;
   
       for (let i = 0; i < bones.length; i++) {
@@ -205,6 +216,7 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
       }
     }
 
+    // changing the color page when hovering using the highlighted state
     const emissiveIntensity = highlighted ? 0.22 : 0;
     skinnedMeshRef.current.material[4].emissiveIntensity =
       skinnedMeshRef.current.material[5].emissiveIntensity = MathUtils.lerp(
@@ -217,7 +229,7 @@ const Page = ({index, front, back,setPage, imageData, fillColor, opened, bookClo
 
   return (
     <group {...props} ref={group}>
-
+    
       {/* page mesh */}
       <primitive
         object={manualSkinnedMesh}
@@ -248,6 +260,8 @@ export const Book = () => {
   const [page,setPage] = useAtom(pageAtom);
   const [delayedPage, setDelayedPage] = useState(page);
 
+
+  //page change function. sets delay between the page change animation so pages turn one after the other
   useEffect(() => {
     let timeout;
     const goToPage = () => {
